@@ -8,7 +8,7 @@ use tokio::{
 async fn main(){
   let listener = TcpListener::bind("localhost:3000").await.unwrap();
 
-	let (tx, _rx) = broadcast::channel(5);
+	let (tx, _rx) = broadcast::channel(10);
 
 	loop{
 		let (mut stream, socket_addr) = listener.accept().await.unwrap();
@@ -28,7 +28,7 @@ async fn main(){
 
 					tokio::select! {
 
-						result = reader.read_line(&mut line) =>{
+						result = reader.read_line(&mut line) => {
 							
 							if result.unwrap() == 0{
 
@@ -40,10 +40,10 @@ async fn main(){
 							line.clear();
 						}
 						result = rx.recv() => {
-							
-							let (msg, _other_addr) = result.unwrap();
 
-							println!("{msg}");
+							let (msg, _other_addr) = result.unwrap();
+							let msg = msg.trim_end_matches('\n');
+							// println!("{}",&msg.trim_end_matches('\n'));
 
 							// if other_addr != socket_addr {
 							writer.write_all(msg.as_bytes()).await.unwrap();
