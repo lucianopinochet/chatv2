@@ -1,28 +1,50 @@
-use std::net::TcpStream;
-use std::io::{self, Write, Read};
+// use std::net::TcpStream;
+// use std::net::TcpStream;
+// use std::io::{self, Write, Read};
 use std::thread;
 use std::time::Duration;
+use tokio::io::AsyncWriteExt;
+
+use tokio::net::TcpStream;
+
 #[tokio::main]
-pub async fn main(){
-  let mut client = TcpStream::connect("localhost:3000").expect("Error connecting to the port");
+async fn main(){
+  let client = TcpStream::connect("localhost:3000").await.unwrap();
   
   println!("Messages: ");
-  loop {
-    
+  
     let mut data = String::new();
-    
-    io::stdin().read_line(&mut data).expect("Couldn't read message");
-    
-    data.pop();
-    
-    client.write_all(data.as_bytes()).expect("Failed to send message");
-    
-    thread::sleep(Duration::from_millis(100));
     let mut buffer = [0;64];
+      // tokio::select! {
+    tokio::spawn(async {
+      loop{
+        std::io::stdin().read_line(&mut data).expect("Couldn't read message");
+          
+          client.write_all(data.as_bytes()).unwrap();
+      }
+    });
+    tokio::spawn(async {
+      loop {
+        client.read(&mut buffer).expect("Couldn't read from server");
+        
+        println!("Recivied from server: {}", String::from_utf8_lossy(&buffer));
+          
+        thread::sleep(Duration::from_millis(100));
+          
+      }
+    })
+        
+        
+        
+        
+        
+        
+        
+
+      // }  
+    // let mut client_cloned_1 = client.try_clone().unwrap();
+    // let mut client_cloned_2 = client.try_clone().unwrap();
     
-    client.read(&mut buffer).expect("Couldn't read from server");
     
-    println!("Recivied from server: {}", String::from_utf8_lossy(&buffer));
-    
-  }  
+  
 }
