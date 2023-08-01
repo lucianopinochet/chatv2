@@ -1,14 +1,14 @@
 use tokio::{
 	net::TcpListener, 
 	sync::broadcast,
-	io::{BufReader, AsyncBufReadExt, AsyncWriteExt}
+	io::{BufReader, AsyncBufReadExt, AsyncWriteExt, AsyncReadExt},
 	};
-
 #[tokio::main]
 async fn main(){
   let listener = TcpListener::bind("localhost:3000").await.unwrap();
 
 	let (tx, _rx) = broadcast::channel(10);
+
 
 	loop{
 		let (mut stream, socket_addr) = listener.accept().await.unwrap();
@@ -17,11 +17,19 @@ async fn main(){
 
 		let mut rx = tx.subscribe();
 
+		
 		tokio::spawn(async move {
+			let mut name = [0;16];
+	
+			stream.read(&mut name).await.unwrap();
+	
+			let name = String::from_utf8_lossy(&name).to_string();
+			
+
 			let (reader, mut writer) = stream.split();
-
+			
 			let mut reader = BufReader::new(reader);
-
+			
 			let mut line = String::new();
 
 			loop {
@@ -41,13 +49,15 @@ async fn main(){
 						}
 						result = rx.recv() => {
 
-							let (msg, _other_addr) = result.unwrap();
+							let (msg, other_addr) = result.unwrap();
 							let msg = msg.trim_end_matches('\n');
+							
+							println!("{name}: {msg}");
 							// println!("{}",&msg.trim_end_matches('\n'));
 
-							// if other_addr != socket_addr {
+							if other_addr != socket_addr {
 							writer.write_all(msg.as_bytes()).await.unwrap();
-							// }
+							}
 						}
 					}
 			}
