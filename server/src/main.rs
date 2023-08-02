@@ -24,6 +24,8 @@ async fn main(){
 			stream.read(&mut name).await.unwrap();
 	
 			let name = String::from_utf8_lossy(&name).to_string();
+
+			println!("{name} Connected.");
 			
 
 			let (reader, mut writer) = stream.split();
@@ -40,6 +42,7 @@ async fn main(){
 								println!("Connection lost with {name}");
 								break;
 							}
+							let mut line = format!("{}: {}", &name, &line);
 							
 							tx.send((line.clone(), socket_addr)).unwrap();
 
@@ -50,15 +53,18 @@ async fn main(){
 							let (msg, other_addr) = result.unwrap();
 							
 							let msg = msg.trim_end_matches('\n');
-							
+
+							if other_addr == socket_addr {
+								// println!("{}: {}",&name, &msg);
+							}
 							
 							if other_addr != socket_addr {
-								println!("{}: {}",&name, &msg);
-								writer.write_all(msg.as_bytes()).await.unwrap();
+								let msg = msg.as_bytes();
+								writer.write_all(msg).await.unwrap();
 							}
 						}
 					}
 			}
-		}).await.unwrap();
+		});
 	}
 }

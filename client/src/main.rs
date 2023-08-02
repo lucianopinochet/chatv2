@@ -22,7 +22,7 @@ async fn main(){
 
       let mut data = [0;64];
 
-      let mut buffer = String::new();
+      let mut buffer = [0;64];
 
       let mut reader = BufReader::new(reader);
 
@@ -30,21 +30,21 @@ async fn main(){
       
       loop{
         tokio::select! {
-          _ = stdin.read(&mut data) => {
-
-            writer.write_all(&data).await.expect("Error writing to stream");
-          }
-          result = reader.read_line(&mut buffer) => {
-							
+          result = reader.read(&mut buffer) => {
+              
+            println!("{}", String::from_utf8_lossy(&buffer));
+            buffer = [0;64];
+            
             if let Err(_) = result{
               println!("Connection Broked");
               exit(1);
-            }
-            println!("{}", buffer);
-
-            buffer.clear();
-
+            };
             thread::sleep(Duration::from_millis(100));
+          }
+          _ = stdin.read(&mut data) => {
+
+            writer.write_all(&data).await.expect("Error writing to stream");
+            data = [0;64];
           }
         }
       }
