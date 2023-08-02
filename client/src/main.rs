@@ -31,19 +31,16 @@ async fn main(){
       loop{
         tokio::select! {
           _ = stdin.read(&mut data) => {
-            let data =  String::from_utf8_lossy(&data);
-            println!("{}", data.trim_end_matches('\n'));
-            
-            writer.write_all(&data.as_bytes()).await.expect("Error writing to stream");
+
+            writer.write_all(&data).await.expect("Error writing to stream");
           }
           result = reader.read_line(&mut buffer) => {
 							
-            if result.unwrap() == 0{
-
-              break;
+            if let Err(_) = result{
+              println!("Connection Broked");
+              exit(1);
             }
-            
-            println!("Recivied from server: {}", buffer);
+            println!("{}", buffer);
 
             buffer.clear();
 

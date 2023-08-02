@@ -12,7 +12,7 @@ async fn main(){
 
 	loop{
 		let (mut stream, socket_addr) = listener.accept().await.unwrap();
-
+	
 		let tx = tx.clone();
 
 		let mut rx = tx.subscribe();
@@ -27,19 +27,17 @@ async fn main(){
 			
 
 			let (reader, mut writer) = stream.split();
-			
+			// writer.write_all("hola".as_bytes()).await.unwrap();
 			let mut reader = BufReader::new(reader);
 			
 			let mut line = String::new();
 
 			loop {
-
 					tokio::select! {
-
 						result = reader.read_line(&mut line) => {
 							
-							if result.unwrap() == 0{
-
+							if let Err(_) = result{
+								println!("Connection lost with {name}");
 								break;
 							}
 							
@@ -50,18 +48,17 @@ async fn main(){
 						result = rx.recv() => {
 
 							let (msg, other_addr) = result.unwrap();
+							
 							let msg = msg.trim_end_matches('\n');
 							
-							println!("{name}: {msg}");
-							// println!("{}",&msg.trim_end_matches('\n'));
-
+							
 							if other_addr != socket_addr {
-							writer.write_all(msg.as_bytes()).await.unwrap();
+								println!("{}: {}",&name, &msg);
+								writer.write_all(msg.as_bytes()).await.unwrap();
 							}
 						}
 					}
 			}
-		});
-
+		}).await.unwrap();
 	}
 }
