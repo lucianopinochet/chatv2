@@ -1,7 +1,9 @@
+use std::process::exit;
+
 use tokio::{
 	net::TcpListener, 
 	sync::broadcast,
-	io::{BufReader, AsyncBufReadExt, AsyncWriteExt, AsyncReadExt},
+	io::{self, BufReader, AsyncBufReadExt, AsyncWriteExt, AsyncReadExt},
 	};
 #[tokio::main]
 async fn main(){
@@ -34,6 +36,10 @@ async fn main(){
 			
 			let mut line = String::new();
 
+			let mut cli = [0;64];
+
+      let mut stdin = io::stdin();
+
 			loop {
 					tokio::select! {
 						result = reader.read_line(&mut line) => {
@@ -61,6 +67,15 @@ async fn main(){
 							if other_addr != socket_addr {
 								let msg = msg.as_bytes();
 								writer.write_all(msg).await.unwrap();
+							}
+						}
+						_ = stdin.read(&mut cli) => {
+							let cli = String::from_utf8_lossy(&cli).to_string();
+
+              println!("{cli}");
+							
+							if cli == "\n"{
+								exit(0);
 							}
 						}
 					}

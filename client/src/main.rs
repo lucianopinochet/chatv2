@@ -2,7 +2,7 @@ use std::env;
 use std::process::exit;
 use std::thread;
 use std::time::Duration;
-use tokio::io::{self, AsyncWriteExt, BufReader, AsyncReadExt, AsyncBufReadExt};
+use tokio::io::{self, AsyncWriteExt, BufReader, AsyncReadExt};
 
 use tokio::net::TcpStream;
 
@@ -37,7 +37,7 @@ async fn main(){
             
             if let Err(_) = result{
               println!("Connection Broked");
-              exit(1);
+              exit(0);
             };
             thread::sleep(Duration::from_millis(100));
           }
