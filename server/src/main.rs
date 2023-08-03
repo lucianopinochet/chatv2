@@ -10,7 +10,8 @@ async fn main(){
   let listener = TcpListener::bind("localhost:3000").await.unwrap();
 
 	let (tx, _rx) = broadcast::channel(10);
-
+	
+	let mut cli = [0;64];
 
 	loop{
 		let (mut stream, socket_addr) = listener.accept().await.unwrap();
@@ -36,7 +37,6 @@ async fn main(){
 			
 			let mut line = String::new();
 
-			let mut cli = [0;64];
 
       let mut stdin = io::stdin();
 
@@ -61,22 +61,24 @@ async fn main(){
 							let msg = msg.trim_end_matches('\n');
 
 							if other_addr == socket_addr {
-								// println!("{}: {}",&name, &msg);
-							}
-							
+							} 
 							if other_addr != socket_addr {
 								let msg = msg.as_bytes();
 								writer.write_all(msg).await.unwrap();
 							}
 						}
 						_ = stdin.read(&mut cli) => {
-							let cli = String::from_utf8_lossy(&cli).to_string();
-
-              println!("{cli}");
 							
-							if cli == "\n"{
+							let msg = cli.into_iter().take_while(|&x| x != 0).collect::<Vec<u8>>();
+							
+							cli = [0;64];
+
+							let msg = String::from_utf8_lossy(&msg).to_string();
+
+							if msg.len() == 2{
 								exit(0);
 							}
+
 						}
 					}
 			}
