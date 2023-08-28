@@ -1,7 +1,7 @@
 use tokio::{
 	net::TcpListener, 
 	sync::broadcast,
-	io::{ BufReader, AsyncBufReadExt, AsyncWriteExt, AsyncReadExt},
+	io::{ BufReader, AsyncWriteExt, AsyncReadExt},
 	};
 #[tokio::main]
 async fn main(){
@@ -18,13 +18,10 @@ async fn main(){
 			println!("{name} Connected.");
 			let (reader, mut writer) = stream.split();
 			let mut reader = BufReader::new(reader);
-			let mut line = String::new();
-			println!("almost loop");
+			let mut line = [0;64];
 			loop {
-			println!("in loop");
 					tokio::select! {
-						result = reader.read_line(&mut line)=> {
-							println!("reading from stream");
+						result = reader.read(&mut line)=> {
 							if let Err(_) = result{
 								println!("Connection lost with {name}");
 								break;
@@ -32,14 +29,12 @@ async fn main(){
 							if line.len() == 0{
 								break;
 							}
-							let mut line = format!("{}: {}", &name, &line);
-							println!("{line}"); 
-							tx.send((line.clone(), socket_addr)).unwrap();
-							line.clear();
-							println!("end reading from stream");
+							let anw = format!("{}: {}", &name, String::from_utf8_lossy(&line));
+							println!("{anw}"); 
+							tx.send((anw.clone(), socket_addr)).unwrap();
+							line = [0;64];
 						}
 						result = rx.recv() => {
-              println!("sending to stream");
 							let (msg, other_addr) = result.unwrap();
 							let msg = msg.trim_end_matches('\n');
 							if other_addr == socket_addr {
@@ -48,7 +43,6 @@ async fn main(){
 								let msg = msg.as_bytes();
 								writer.write_all(msg).await.unwrap();
 							}
-							println!("end sending to stream");
 						}
 					}
 			}
